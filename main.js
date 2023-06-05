@@ -19,6 +19,9 @@ kaboom({
 setGravity(1600)
 const SPEED = 100
 
+const ENEMY_SPEED = 100
+const BULLET_SPEED = 400
+
 /* ####################################################################### */
 /*                                 Blocs                                   */
 /* ####################################################################### */
@@ -61,7 +64,7 @@ const map = addLevel([
     "                                                                                                                          ",
     "                                                                    =====                                                 ",
     "===================================                              ============              ====                           ",
-    "..................................................           .............................         .......................",
+    "..................................................     ..    .............................         .......................",
 ], {
     tileWidth: 16,
     tileHeight: 16,
@@ -126,7 +129,7 @@ onKeyPress("space", () => {
 /* ####################################################################### */
 /*                             Assets Joueur                               */
 /* ####################################################################### */
-/*
+
 
 
 // Asset Joueur Broforce
@@ -152,7 +155,7 @@ loadSpriteAtlas("Assets/Caractere.png", {
 });
 
 // joueur final
-
+/*
 const player = add([
     sprite("hero", {
         anim:"run"
@@ -161,7 +164,9 @@ const player = add([
     body(),
     pos(100,200)
 ])
+
  */
+
 
 
 
@@ -179,6 +184,8 @@ const player = add([
 
 
 
+
+
 // Movements
 onKeyDown("left", () => {
     player.move(-SPEED, 0)
@@ -186,6 +193,11 @@ onKeyDown("left", () => {
 
 onKeyDown("right", () => {
     player.move(SPEED, 0)
+})
+
+
+onKeyDown("z", () => {
+    player.shoot()
 })
 
 //$ Caméra sur le joueur $//
@@ -214,3 +226,71 @@ function start() {
 
 start()
 */
+
+
+
+/* ####################################################################### */
+/*                              Ennemie                                    */
+/* ####################################################################### */
+
+loadSprite("en", "ressources/joueur/mechant.png")
+
+const enemy = add([
+    sprite("en"),
+    area(),
+    body(),
+    pos(400,130),
+    // This enemy cycle between 3 states, and start from "idle" state
+    state("move", [ "idle", "attack", "move" ]),
+])
+
+enemy.onStateEnter("idle", async () => {
+    await wait(0.5)
+    enemy.enterState("attack")
+})
+
+// When we enter "attack" state, we fire a bullet, and enter "move" state after 1 sec
+enemy.onStateEnter("attack", async () => {
+
+    // Don't do anything if player doesn't exist anymore
+    if (player.exists()) {
+
+        const dir = player.pos.sub(enemy.pos).unit()
+
+        add([
+            pos(enemy.pos),
+            move(dir, BULLET_SPEED),
+            rect(5, 5),
+            area(),
+            offscreen({ destroy: true }),
+            anchor("center"),
+            color(YELLOW),
+            "bullet",
+        ])
+
+    }
+
+    await wait(1)
+    enemy.enterState("move")
+
+})
+
+enemy.onStateEnter("move", async () => {
+    await wait(1)
+    enemy.enterState("idle")
+})
+
+// Like .onUpdate() which runs every frame, but only runs when the current state is "move"
+// Here we move towards the player every frame if the current state is "move"
+enemy.onStateUpdate("move", () => {
+    if (!player.exists()) return
+    const dir = player.pos.sub(enemy.pos).unit()
+    enemy.move(dir.scale(ENEMY_SPEED))
+})
+
+// Taking a bullet makes us disappear
+player.onCollide("bullet", (bullet) => {
+    destroy(bullet)
+    destroy(player)
+    addKaboom(bullet.pos)
+})
