@@ -12,15 +12,18 @@ kaboom({
     clearColor: [0, 0, 0, 1],
 })
 
+
 /* ####################################################################### */
 /*                              Paramètre                                  */
 /* ####################################################################### */
 
 setGravity(1600)
-const SPEED = 100
+const SPEED = 200
 
 const ENEMY_SPEED = 100
 const BULLET_SPEED = 400
+
+positionFire = 180;
 
 /* ####################################################################### */
 /*                                 Blocs                                   */
@@ -56,13 +59,13 @@ loadSpriteAtlas("ressources/asset/blocmap.png", {
 /* ####################################################################### */
 
 const map = addLevel([
-    "                           .                                                                                              ",
+    "                           ...                                                                                            ",
     "                                                                                                                          ",
     "                                                                                                                          ",
     "                                                                                                                          ",
     "                                                                                                                          ",
     "                                                                                                                          ",
-    "                                                                    =====                                                 ",
+    "                                          @                         =====                                  @              ",
     "===================================                              ============              ====                           ",
     "..................................................     ..    .............................         .......................",
 ], {
@@ -86,8 +89,17 @@ const map = addLevel([
             tile({isObstacle: true}),
             "vide",
         ],
+        "@": () => [
+            sprite("en"),
+            area(),
+            scale(1),
+            body({isStatic: true}),
+            tile({isObstacle: true}),
+            "vide",
+        ],
     }
 });
+
 
 // sol de base
 /*
@@ -104,17 +116,38 @@ add([
 
 
 /* ####################################################################### */
-/*                          Déplacement Joueur                             */
+/*                                   Joueur                                */
 /* ####################################################################### */
+// joueur broforce
+/*
+const player = add([
+    sprite("hero", {
+        anim:"run"
+    }),
+    area(),
+    body(),
+    pos(100,200)
+])*/
 
-// onKeyDown() registers an event that runs every frame as long as user is holding a certain key
+// joueur test champi
+
+const player = add([
+    sprite("bean"),
+    area(),
+    body(),
+    pos(100,130)
+])
+//////////////////////////////////////////
+//              Déplacement             //
+//////////////////////////////////////////
 onKeyDown("left", () => {
-    // .move() is provided by pos() component, move by pixels per second
     player.move(-SPEED, 0)
+    positionFire = 180;
 })
 
 onKeyDown("right", () => {
     player.move(SPEED, 0)
+    positionFire = 1;
 })
 
 onKeyPress("space", () => {
@@ -124,16 +157,40 @@ onKeyPress("space", () => {
         player.jump()
     }
 })
+//////////////////////////////////////////
+//                Tirer                 //
+//////////////////////////////////////////
+onKeyDown("z", () => {
+    if (player.exists()) {
+        add([
+            pos(player.pos),
+            move(positionFire, BULLET_SPEED),
+            rect(5, 5),
+            area(),
+            offscreen({ destroy: true }),
+            anchor("center"),
+            color(RED),
+            "feu",
+        ])
+    }
+})
+//////////////////////////////////////////
+//         Caméra sur le joueur         //
+//////////////////////////////////////////
+player.onUpdate(() => {
+    // Set the viewport center to player.pos
+    camPos(player.worldPos())
+})
 
-
+player.onPhysicsResolve(() => {
+    // Set the viewport center to player.pos
+    camPos(player.worldPos())
+})
 /* ####################################################################### */
 /*                             Assets Joueur                               */
 /* ####################################################################### */
 
-
-
 // Asset Joueur Broforce
-
 
 loadSpriteAtlas("Assets/Caractere.png", {
     "hero": {
@@ -153,81 +210,10 @@ loadSpriteAtlas("Assets/Caractere.png", {
         },
     },
 });
-
-// joueur final
-/*
-const player = add([
-    sprite("hero", {
-        anim:"run"
-    }),
-    area(),
-    body(),
-    pos(100,200)
-])
-
- */
-
-
-
-
-// ##################################################################
-
-// joueur test champi
-
-const player = add([
-    sprite("bean"),
-    area(),
-    body(),
-    pos(100,130)
-])
-
-
-
-
-
-
-// Movements
-onKeyDown("left", () => {
-    player.move(-SPEED, 0)
-})
-
-onKeyDown("right", () => {
-    player.move(SPEED, 0)
-})
-
-
-onKeyDown("z", () => {
-    player.shoot()
-})
-
-//$ Caméra sur le joueur $//
-player.onUpdate(() => {
-    // Set the viewport center to player.pos
-    camPos(player.worldPos())
-})
-
-player.onPhysicsResolve(() => {
-    // Set the viewport center to player.pos
-    camPos(player.worldPos())
-})
-
-
 /* ####################################################################### */
 /*                                                                         */
 /* ####################################################################### */
 /*
-function start() {
-    // Start with the "game" scene, with initial parameters
-    go("game", {
-        levelIdx: 0,
-    })
-}
-
-
-start()
-*/
-
-
 
 /* ####################################################################### */
 /*                              Ennemie                                    */
@@ -244,30 +230,33 @@ const enemy = add([
     state("move", [ "idle", "attack", "move" ]),
 ])
 
+
 enemy.onStateEnter("idle", async () => {
-    await wait(0.5)
+    await wait(0)
     enemy.enterState("attack")
 })
 
 // When we enter "attack" state, we fire a bullet, and enter "move" state after 1 sec
 enemy.onStateEnter("attack", async () => {
 
-    // Don't do anything if player doesn't exist anymore
-    if (player.exists()) {
+    if (enemy.exists()) {
+        // Don't do anything if player doesn't exist anymore
+        if (player.exists()) {
 
-        const dir = player.pos.sub(enemy.pos).unit()
+            const dir = player.pos.sub(enemy.pos)
 
-        add([
-            pos(enemy.pos),
-            move(dir, BULLET_SPEED),
-            rect(5, 5),
-            area(),
-            offscreen({ destroy: true }),
-            anchor("center"),
-            color(YELLOW),
-            "bullet",
-        ])
+            add([
+                pos(enemy.pos),
+                move(dir, BULLET_SPEED),
+                rect(5, 5),
+                area(),
+                offscreen({destroy: true}),
+                anchor("center"),
+                color(YELLOW),
+                "bullet",
+            ])
 
+        }
     }
 
     await wait(1)
@@ -276,7 +265,7 @@ enemy.onStateEnter("attack", async () => {
 })
 
 enemy.onStateEnter("move", async () => {
-    await wait(1)
+    await wait(0.2)
     enemy.enterState("idle")
 })
 
@@ -288,9 +277,20 @@ enemy.onStateUpdate("move", () => {
     enemy.move(dir.scale(ENEMY_SPEED))
 })
 
+
+
+
+
+
+
+
 // Taking a bullet makes us disappear
 player.onCollide("bullet", (bullet) => {
     destroy(bullet)
     destroy(player)
-    addKaboom(bullet.pos)
+})
+
+enemy.onCollide("feu", (bullet) => {
+    destroy(bullet)
+    destroy(enemy)
 })
