@@ -8,6 +8,7 @@ kaboom({
     scale: 2,
     debug: true,
     clearColor: [0, 0, 0, 1],
+    background: [74, 48, 82],
 })
 
 /* ####################################################################### */
@@ -15,17 +16,20 @@ kaboom({
 /* ####################################################################### */
 
 setGravity(1600)
-const SPEED = 200
 
+
+const SPEED = 200
 const ENEMY_SPEED = 100
 const BULLET_SPEED = 400
-
-positionFire = 180;
 
 /* ####################################################################### */
 /*                                 Blocs                                   */
 /* ####################################################################### */
-loadSprite("bean", "ressources/joueur/mechant.png")
+loadSprite("ennemi", "ressources/joueur/mechant.png")
+loadSprite("bean", "ressources/joueur/mario.png")
+
+loadSprite("drapeau", "ressources/asset/drapeau.png")
+
 
 loadSprite("sol", "ressources/blocs/truc.png")
 loadSprite("vide", "ressources/blocs/vide.png")
@@ -57,21 +61,21 @@ loadSpriteAtlas("ressources/asset/blocmap.png", {
 const LEVELS = [
     [
         ".                              .",
+        ".                     $        .",
+        ".                              .",
+        ".                              .",
+        ".        $ $ $                 .",
         ".                              .",
         ".                              .",
         ".                              .",
-        ".                              .",
-        ".                              .",
-        ".                              .",
-        ".                              .",
-        ".                              .",
+        ".                       $      .",
         ".                              .",
         ".                              .",
         ".                              .",
         ".                              .",
         ".                              .",
         ".       @                      .",
-        ".                              .",
+        ".                          /   .",
         ".==============================.",
         "................................",
     ],
@@ -91,13 +95,13 @@ const LEVELS = [
         ".                              .",
         ".                              .",
         ".       @                      .",
-        ".                              .",
+        ".                           /  .",
         ".==============================.",
         "................................",
     ],
 ]
 
-scene("game", ({ levelIdx, score }) => {
+scene("game", ({ levelIdx }) => {
 
     // Use the level passed, or first level
     const level = addLevel(LEVELS[levelIdx || 0], {
@@ -128,18 +132,27 @@ scene("game", ({ levelIdx, score }) => {
                 tile({ isObstacle: true }),
                 "vide",
             ],
+            "$": () => [
+                sprite("ennemi"),
+                area(),
+                scale(1),
+                body({ isStatic: true }),
+                tile({ isObstacle: true }),
+                "ennemi",
+            ],
+            "/": () => [
+                sprite("drapeau"),
+                area(),
+                scale(1),
+                body({ isStatic: true }),
+                tile({ isObstacle: true }),
+                "drapeau",
+            ],
         },
     })
 
     // Get the player object from tag
     const player = level.get("player")[0]
-
-    // Movements
-    onKeyPress("space", () => {
-        if (player.isGrounded()) {
-            player.jump()
-        }
-    })
 
     onKeyDown("left", () => {
         player.move(-SPEED, 0)
@@ -149,20 +162,72 @@ scene("game", ({ levelIdx, score }) => {
         player.move(SPEED, 0)
     })
 
+
+    function spawnBullet() {
+        add([
+            rect(5, 5),
+            area(),
+            pos(player.pos.sub(0, 10)),
+            anchor("center"),
+            color(127, 127, 255),
+            outline(4),
+            move(UP, BULLET_SPEED),
+            offscreen({ destroy: true }),
+            // strings here means a tag
+            "feu",
+        ])
+    }
+
+
+    onCollide("feu", "sol", (feu) => {
+        destroy(feu)
+    })
+
+    onCollide("feu", "vide", (feu) => {
+        destroy(feu)
+    })
+
+
+    onKeyPress("space", async () => {
+        spawnBullet()
+    })
+
     // Fall death
     player.onUpdate(() => {
         if (player.pos.y >= 480) {
 
         }
     })
+
+
+    player.onCollide("drapeau", () => {
+        if (levelIdx < LEVELS.length - 1) {
+            // If there's a next level, go() to the same scene but load the next level
+            go("game", {
+                levelIdx: levelIdx + 1,
+            })
+        } else {
+            // Otherwise we have reached the end of game, go to "win" scene!
+            go("win")
+        }
+    })
 })
 
+scene("win", () => {
+
+    add([
+        text(`You win !!!`, {
+            width: width(),
+        }),
+        pos(200, 200),
+    ])
+    onKeyPress(start)
+})
 
 function start() {
     // Start with the "game" scene, with initial parameters
     go("game", {
         levelIdx: 0,
-        score: 0,
     })
 }
 
@@ -211,9 +276,9 @@ for (let i=0;i<3;i++){
 
     let oneEnemy = add([
         sprite("en"),
-        area(),
         body(),
-        pos((400+(20*i)),130),
+        area(),
+        pos(20,130),
         // This enemy cycle between 3 states, and start from "idle" state
         state("move", [ "idle", "attack", "move" ]),
     ])

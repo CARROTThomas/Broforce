@@ -19,10 +19,10 @@ setGravity(800)
 const SPEED = 300
 
 const ENEMY_SPEED = 100
-const BULLET_SPEED = 400
+const BULLET_SPEED = 500
 const JUMP_FORCE = 420
 
-positionFire = 180;
+positionFire = 1;
 
 /* ####################################################################### */
 /*                                 Blocs                                   */
@@ -30,7 +30,7 @@ positionFire = 180;
 loadSprite("mario", "ressources/joueur/mario.png")
 loadSprite("en", "ressources/joueur/mechant.png")
 
-loadSprite("munition", "ressources/blocs/munition.png")
+loadSprite("drapeau", "ressources/asset/drapeau.png")
 
 loadSprite("sol", "ressources/blocs/truc.png")
 loadSprite("vide", "ressources/blocs/vide.png")
@@ -59,8 +59,8 @@ loadSpriteAtlas("ressources/asset/blocmap.png", {
 /* ####################################################################### */
 /*                                 MAP                                     */
 /* ####################################################################### */
-
-const map = addLevel([
+const map = addLevel(
+    [
     "                                                                                                                          ",
     "                                                                                                                          ",
     "                                                                                                                          ",
@@ -78,10 +78,12 @@ const map = addLevel([
     "                ...             =                                             ==================                          ",
     "                                =                                                                                         ",
     "                                =                                                                                         ",
-    "                                =                                    =====                                                ",
-    "==================================================     ==    =============================         =======================",
+    "                                =                                     ========                                         /  ",
+    "======================================================================........============================================",
     "..........................................................................................................................",
-], {
+    ],
+
+    {
     tileWidth: 16,
     tileHeight: 16,
     pos: vec2(100, 140),
@@ -96,6 +98,14 @@ const map = addLevel([
         ],
         ".": () => [
             sprite("vide"),
+            area(),
+            scale(2),
+            body({ isStatic: true }),
+            tile({ isObstacle: true }),
+            "vide",
+        ],
+        "/": () => [
+            sprite("drapeau"),
             area(),
             scale(2),
             body({ isStatic: true }),
@@ -199,6 +209,15 @@ function spawnBullet() {
 }
 
 
+onCollide("feu", "sol", (feu) => {
+    destroy(feu)
+})
+
+onCollide("feu", "vide", (feu) => {
+    destroy(feu)
+})
+
+
 onKeyPress("z", async () => {
     spawnBullet()
 })
@@ -229,7 +248,6 @@ loadSpriteAtlas("Assets/Caractere.png", {
 /* ####################################################################### */
 /*                                                                         */
 /* ####################################################################### */
-/*
 
 /* ####################################################################### */
 /*                              Ennemie                                    */
@@ -302,15 +320,16 @@ function wakeEnemy(enemy){
         destroy(enemy)
     })
 
+    onCollide("bullet", "sol", (bullet) => {
+        destroy(bullet)
+    })
+    onCollide("bullet", "vide", (bullet) => {
+        destroy(bullet)
+    })
+
+
 }
-/*
+
 enemies.forEach((enemy)=>{
     wakeEnemy(enemy)
-})
-
- */
-
-
-onCollide("sol", "munition", () => {
-    addExplosion()
 })
