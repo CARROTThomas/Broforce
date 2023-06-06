@@ -8,7 +8,6 @@ kaboom({
     scale: 1,
     debug: true,
     clearColor: [0, 0, 0, 1],
-    background: [74, 48, 82],
 })
 
 /* ####################################################################### */
@@ -27,10 +26,7 @@ positionFire = 180;
 /* ####################################################################### */
 /*                                 Blocs                                   */
 /* ####################################################################### */
-loadSprite("mario", "ressources/joueur/mario.png")
-loadSprite("en", "ressources/joueur/mechant.png")
-
-loadSprite("munition", "ressources/blocs/munition.png")
+loadSprite("bean", "ressources/joueur/mechant.png")
 
 loadSprite("sol", "ressources/blocs/truc.png")
 loadSprite("vide", "ressources/blocs/vide.png")
@@ -80,7 +76,7 @@ const map = addLevel([
     "                                =                                                                                         ",
     "                                =                                    =====                                                ",
     "==================================================     ==    =============================         =======================",
-    "..........................................................................................................................",
+    "..................................................     ..    .............................         .......................",
 ], {
     tileWidth: 16,
     tileHeight: 16,
@@ -136,7 +132,7 @@ const player = add([
 
 // joueur test champi
 let player = add([
-    sprite("mario"),
+    sprite("bean"),
     area(),
     body(),
     pos(140,250)
@@ -183,25 +179,22 @@ onKeyPress("space", () => {
 //////////////////////////////////////////
 //                Tirer                 //
 //////////////////////////////////////////
-function spawnBullet() {
-    add([
-        rect(5, 5),
-        area(),
-        pos(player.pos.sub(-10, -10)),
-        anchor("center"),
-        color(127, 127, 255),
-        outline(4),
-        move(positionFire, BULLET_SPEED),
-        offscreen({ destroy: true }),
-        // strings here means a tag
-        "feu",
-    ])
-}
-
-
-onKeyPress("z", async () => {
-    spawnBullet()
+onKeyDown("z", async () => {
+    if (player.exists()) {
+        add([
+            pos(player.pos),
+            move(positionFire, BULLET_SPEED),
+            rect(5, 5),
+            area(),
+            offscreen({ destroy: true }),
+            anchor("center"),
+            color(YELLOW),
+            "feu",
+        ])
+    }
+    await wait(1)
 })
+
 /* ####################################################################### */
 /*                             Assets Joueur                               */
 /* ####################################################################### */
@@ -234,6 +227,10 @@ loadSpriteAtlas("Assets/Caractere.png", {
 /* ####################################################################### */
 /*                              Ennemie                                    */
 /* ####################################################################### */
+
+loadSprite("en", "ressources/joueur/mechant.png")
+
+
 let enemies = [];
 
 for (let i=1;i<4;i++){
@@ -269,7 +266,7 @@ function wakeEnemy(enemy){
                 const dir = player.pos.sub(enemy.pos)
 
                 add([
-                    pos(enemy.pos.sub(-10, -10)),
+                    pos(enemy.pos),
                     move(dir, BULLET_SPEED),
                     rect(5, 5),
                     area(),
@@ -285,7 +282,7 @@ function wakeEnemy(enemy){
     })
 
     enemy.onStateEnter("move", async () => {
-        await wait(1)
+        await wait(0.2)
         enemy.enterState("idle")
     })
 
@@ -303,14 +300,7 @@ function wakeEnemy(enemy){
     })
 
 }
-/*
+
 enemies.forEach((enemy)=>{
     wakeEnemy(enemy)
-})
-
- */
-
-
-onCollide("sol", "munition", () => {
-    addExplosion()
 })
