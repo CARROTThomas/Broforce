@@ -24,6 +24,8 @@ const JUMP_FORCE = 250
 
 positionFire = 1;
 
+const regex = '>';
+let arrayPositionEnemies = [];
 /* ####################################################################### */
 /*                                 Blocs                                   */
 /* ####################################################################### */
@@ -43,10 +45,10 @@ const LEVELS = [
     [
         "                                                                                                                          ",
         "                                                                                                                          ",
+        "                                                                              >                                           ",
         "                                                                                                                          ",
         "                                                                                                                          ",
-        "                                                                                                                          ",
-        "                                                                                                                          ",
+        "                                                          >                                                               ",
         "                                                                                                                          ",
         "                                                                                                                          ",
         "                                                                                                                          ",
@@ -55,9 +57,9 @@ const LEVELS = [
         "                           ...  =                                                                                         ",
         "                                =                                                                                         ",
         "                                =       ...                                                                               ",
-        "                ...             =                                             ==================                          ",
-        "                                =                                                                                         ",
-        "                                =                                                                                    /    ",
+        "                ...             =                      >                      ==================                          ",
+        "                                =                                                                   >                     ",
+        "                      >         =                                                                                    /    ",
         "                                =                                     ========                                      ///   ",
         "======================================================================........============================================",
         "..........................................................................................................................",
@@ -70,23 +72,23 @@ const LEVELS = [
         "                                                                                                                          ",
         "                                                                                                                          ",
         "                                                                                                                          ",
+        "                                                                                                   >                      ",
         "                                                                                                                          ",
-        "                                                                                                                          ",
-        "                                                                                                                          ",
+        "                                                                                    >                                     ",
         "                                                                                                                          ",
         "                           ...                                                                                            ",
         "                                                                                                                          ",
-        "                                        ...                                                                               ",
+        "                                        ...                  >                                                            ",
         "                ...                                                           ==================                          ",
         "                                =                                                                                         ",
-        "                                =                                                                                     /   ",
+        "                    >           =                                                                                     /   ",
         "                                =                                     ========                                       ///  ",
         "======================================================================........============================================",
         "..........................................................................................................................",
     ],
 ]
 
-scene("game", ({ levelIdx, score }) => {
+scene("game", ({ levelIdx }) => {
 
     // Use the level passed, or first level
     const level = addLevel(LEVELS[levelIdx || 0], {
@@ -124,7 +126,25 @@ scene("game", ({ levelIdx, score }) => {
                 "drapeau",
             ],
         },
+
     })
+
+    for (let j = 0; j < 18; j++) {
+        positionX = (LEVELS[levelIdx][j].search(regex))
+        console.log(positionX)
+        if (positionX !== -1) {
+            arrayPositionEnemies.push(
+                {
+                    "x": (100 + (positionX * 16)),
+                    "y":(100 + (j)),
+                }
+            )
+        }
+    }
+    positionX = null;
+    console.log(arrayPositionEnemies);
+
+
 
     player = add([
         sprite("mario"),
@@ -216,27 +236,25 @@ scene("game", ({ levelIdx, score }) => {
         spawnBullet()
     })
 
-
-
-
-
     /* ####################################################################### */
     /*                                                                         */
     /* ####################################################################### */
     let enemies = [];
 
-    for (let i=2;i<5;i++){
+    for (let i=0;i<arrayPositionEnemies.length;i++){
 
         let oneEnemy = add([
             sprite("en"),
             area(),
             body(),
-            pos((400+(200*i)),200),
+            pos((arrayPositionEnemies[i].x),(arrayPositionEnemies[i].y)),
             // This enemy cycle between 3 states, and start from "idle" state
             state("move", [ "idle", "attack", "move" ]),
         ])
         enemies.push(oneEnemy)
     }
+    arrayPositionEnemies.splice(0, arrayPositionEnemies.length)
+
 
     function wakeEnemy(enemy){
 
@@ -301,21 +319,6 @@ scene("game", ({ levelIdx, score }) => {
     /* ####################################################################### */
     /*                                                                         */
     /* ####################################################################### */
-
-
-    let array = [
-        {
-            "x":300,
-            "y": 270,
-        },
-        {
-            "x":300,
-            "y": 270,
-        },
-    ]
-
-
-
 })
 
 scene("lose", () => {
@@ -358,3 +361,12 @@ function start() {
 }
 
 start()
+
+
+/*
+*
+*
+* for (let j = 0; j < 18; j++) {
+        positionX = LEVELS[levelIdx[j]].search(regex)
+        console.log(positionX)
+    }*/
