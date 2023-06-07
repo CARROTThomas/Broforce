@@ -58,27 +58,8 @@ loadSpriteAtlas("ressources/asset/blocmap.png", {
 /* ####################################################################### */
 /*                                 MAP                                     */
 /* ####################################################################### */
-const LEVELS = [
-    [
-        ".                              .",
-        ".                     $        .",
-        ".                              .",
-        ".                              .",
-        ".        $ $ $                 .",
-        ".                              .",
-        ".                              .",
-        ".                              .",
-        ".                       $      .",
-        ".                              .",
-        ".                              .",
-        ".                              .",
-        ".                              .",
-        ".                              .",
-        ".       @                      .",
-        ".                          /   .",
-        ".==============================.",
-        "................................",
-    ],
+const BOSS = [
+
     [
         ".                              .",
         ".                              .",
@@ -101,10 +82,10 @@ const LEVELS = [
     ],
 ]
 
-scene("game", ({ levelIdx }) => {
+scene("game", ({ levelIdBoss }) => {
 
     // Use the level passed, or first level
-    const level = addLevel(LEVELS[levelIdx || 0], {
+    const level = addLevel(BOSS[levelIdBoss || 0], {
         tileWidth: 24,
         tileHeight: 24,
         pos: vec2(0, 0),
@@ -201,10 +182,10 @@ scene("game", ({ levelIdx }) => {
 
 
     player.onCollide("drapeau", () => {
-        if (levelIdx < LEVELS.length - 1) {
+        if (levelIdBoss < LEVELS.length - 1) {
             // If there's a next level, go() to the same scene but load the next level
             go("game", {
-                levelIdx: levelIdx + 1,
+                levelIdBoss: levelIdBoss + 1,
             })
         } else {
             // Otherwise we have reached the end of game, go to "win" scene!
@@ -227,7 +208,7 @@ scene("win", () => {
 function start() {
     // Start with the "game" scene, with initial parameters
     go("game", {
-        levelIdx: 0,
+        levelIdBoss: 0,
     })
 }
 
