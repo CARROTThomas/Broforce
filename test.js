@@ -616,7 +616,7 @@ function start() {
     })
 
      */
-    go("scene", {
+    go("game", {
         levelIdx: 0,
         score: 0,
     })
