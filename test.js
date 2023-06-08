@@ -18,7 +18,7 @@ const SPEED = 300
 const ENEMY_SPEED = 40
 
 const BOSS_SPEED = 300
-const BOSS_HEALTH = 200
+const BOSS_HEALTH = 100
 
 const BULLET_SPEED = 500
 const JUMP_FORCE = 300
@@ -59,8 +59,8 @@ const LEVELS = [
         "                                =        $                                                                                ",
         "                 $              =       ...                                          $$$                                  ",
         "                ...             =          .                                  ============                                ",
-        "                                =                                                                                         ",
-        "                                =                                        $                                            /   ",
+        "                                =                                                                   >                     ",
+        "                                =                        >               $                                            /   ",
         "                                =                                     ========                                       ///  ",
         "======================================================================        ============================================",
         //"..........................................................................................................................",
@@ -233,7 +233,10 @@ scene("game", ({ levelIdx, score }) => {
             })
         } else {
             // Otherwise we have reached the end of game, go to "win" scene!
-            go("win", { score: score })
+            go("battle", {
+                levelIdBoss: 0,
+                score: score,
+            })
         }
     })
 
@@ -399,7 +402,7 @@ const BOSS = [
         ".                                      .",
         ".                                      .",
         ".                                      .",
-        ".                                    / .",
+        ".                                      .",
         ".======================================.",
     ],
 ]
@@ -426,20 +429,55 @@ scene("battle", ({levelIdBoss, score})=> {
                 tile({ isObstacle: true }),
                 "vide",
             ],
-            "/": () => [
-                sprite("drapeau"),
-                area(),
-                scale(2),
-                body({ isStatic: true }),
-                tile({ isObstacle: true }),
-                "drapeau",
-            ],
         },
     })
     /* ########################################################################### */
     /* ########################################################################### */
 
+    // Plein écran
+    onKeyPress("f", () => {
+        setFullscreen(!isFullscreen())
+    })
 
+    // affichage titre KILL THE BOSS
+    function late(t) {
+        let timer = 0
+        return {
+            add() {
+                this.hidden = true
+            },
+            update() {
+                timer += dt()
+                if (timer >= t) {
+                    this.hidden = false
+                }
+            },
+        }
+    }
+    add([
+        text("KILL", { size: 160 }),
+        pos(width() / 2, height() / 2),
+        anchor("center"),
+        lifespan(1),
+        fixed(),
+    ])
+    add([
+        text("THE", { size: 80 }),
+        pos(width() / 2, height() / 2),
+        anchor("center"),
+        lifespan(2),
+        late(1),
+        fixed(),
+    ])
+    add([
+        text("BOSS", { size: 120 }),
+        pos(width() / 2, height() / 2),
+        anchor("center"),
+        lifespan(4),
+        late(2),
+        fixed(),
+    ])
+    /* ########                ######                ###### */
 
     /* ########                PLAYER                ###### */
     const player = add([
@@ -477,11 +515,9 @@ scene("battle", ({levelIdBoss, score})=> {
             "bullet",
         ])
     }
-    onKeyDown("space", () => {
+    onKeyDown("z", () => {
         spawnBullet(player.pos.sub(-20, 10))
     })
-
-
 
     /* ########                BOSS                ###### */
 
@@ -493,12 +529,11 @@ scene("battle", ({levelIdBoss, score})=> {
         health(BOSS_HEALTH),
         scale(5),
         anchor("top"),
-        "boss",
+        "enemy",
         {
             dir: 1,
         },
     ])
-
     // déplacement
     boss.onUpdate( () => {
         boss.move(BOSS_SPEED * boss.dir, 0)
@@ -510,55 +545,31 @@ scene("battle", ({levelIdBoss, score})=> {
         }
     })
 
-
-
-
+    // boss toucher
+    onCollide("bullet", "enemy", (b, e) => {
+        destroy(b)
+        e.hurt(1)
+    })
     boss.onHurt(() => {
-        healthbar.set(boss.hp()-20)
+        healthbar.set(boss.hp())
     })
 
     boss.onDeath(() => {
-        go("win", {
-            time: timer.time,
-            boss: bossName,
-        })
+        go("win", { score: (score+50) })
     })
 
     const healthbar = add([
         rect(width(), 24),
-        pos(0, 10),
+        pos(0, 0),
         color(107, 201, 108),
         fixed(),
         {
             max: BOSS_HEALTH,
             set(hp) {
                 this.width = width() * hp / this.max
-                this.flash = true
             },
         },
     ])
-
-    healthbar.onUpdate(() => {
-        if (healthbar.flash) {
-            healthbar.color = rgb(255, 255, 255)
-            healthbar.flash = false
-        } else {
-            healthbar.color = rgb(127, 255, 127)
-        }
-    })
-
-
-    boss.onCollide("bullet", (bullet) => {
-        destroy(bullet)
-        boss.hp(BOSS_HEALTH - 20)
-    })
-
-
-
-
-
-
-
     /* ########################################################################### */
     /* ########################################################################### */
 })
