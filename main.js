@@ -9,26 +9,56 @@ kaboom({
     clearColor: [0, 0, 0, 1],
     background: [11, 17, 30],
 })
+
 /* ####################################################################### */
 /*                              Paramètre                                  */
 /* ####################################################################### */
-setGravity(600)
+setGravity(800)
+
 const SPEED = 300
-
+let SPEED_FIRE = 1000
 const ENEMY_SPEED = 40
-
 const BOSS_SPEED = 300
-const BOSS_HEALTH = 60
-
 const BULLET_SPEED = 500
-const JUMP_FORCE = 300
 
-positionFire = 1;
+const JUMP_FORCE = 400
 
+const PLAYER_HEALTH = 3
+const BOSS_HEALTH = 10
+
+let positionFire = 1;
+
+// chercher les éléments sur une map
 const regex1 = '>';
 const regex2 = '@';
+const regex3 = 'ù';
+// tableau de position trouver
 let arrayPositionEnemies = [];
 let arrayPositionFlammesBar = [];
+
+// ajouter un bouton
+function addButton(txt, p1, p2, f) {
+
+    // add a parent background object
+    const btn = add([
+        rect(240, 80, {radius: 8}),
+        pos(p1, p2),
+        area(),
+        scale(1),
+        anchor("center"),
+        outline(4),
+    ])
+
+    btn.add([
+        text(txt),
+        anchor("center"),
+        color(0, 0, 0),
+    ])
+
+    btn.onClick(f)
+
+    return btn
+}
 /* ####################################################################### */
 /*                                 Blocs                                   */
 /* ####################################################################### */
@@ -41,8 +71,33 @@ loadSprite("flame", "ressources/blocs/munition.png")
 
 loadSprite("sol", "ressources/blocs/truc.png")
 loadSprite("vide", "ressources/blocs/vide.png")
+
+loadSpriteAtlas("/ressources/joueur/BroForce2.png", {
+    "hero": {
+        "x": 19,
+        "y": 0,
+        "width": 255,
+        "height": 100,
+        "sliceX": 8,
+        "sliceY": 5,
+        "anims": {
+            "idle": {
+                "from": 0,
+                "to": 2,
+                "speed": 3,
+                "loop": true,
+            },
+            "run": {
+                "from": 0,
+                "to": 2,
+                "speed": 3,
+                "loop": true,
+            },
+        }
+    }
+})
 /* ####################################################################### */
-/*                                 MAP                                     */
+/*                          MAP + SCENE JEU                                */
 /* ####################################################################### */
 const LEVELS = [
     [
@@ -58,12 +113,11 @@ const LEVELS = [
         "                           ...  =                                                                                         ",
         "                                =        $                                                                                ",
         "                 $              =       ...                                          $$$                                  ",
-        "                ...             =          .                                  ============                                ",
+        "                ...             =          .     ù                            ============                                ",
         "                                =                                                                   >                     ",
         "                                =                        >               $                                            /   ",
-        "                                =                                     ========                                       ///  ",
+        "                         /      =                                     ========                                       ///  ",
         "======================================================================        ============================================",
-        //"..........................................................................................................................",
     ],
     [
         "                                                                                                                          ",
@@ -77,12 +131,29 @@ const LEVELS = [
         "                           ...                                                                                            ",
         "                                         $                                                                                ",
         "                 $                      ...                                          $$$                                  ",
-        "                ...                        .                                  =============                               ",
+        "                ...                        @                                  =============                               ",
         "                                =                                                                                         ",
         "                                =                                        $                                            /   ",
-        "                                =                                     ========                                       ///  ",
+        "                         /      =                                     ========                                       ///  ",
         "======================================================================        ============================================",
-        //"..........................................................................................................................",
+    ],
+    [
+        "                                                                                                                          ",
+        "                                                                                                                          ",
+        "                                                                                                                          ",
+        "                                                                                                                          ",
+        "                                                                                                                          ",
+        "                                                                                                                          ",
+        "                                                                                                                          ",
+        "                            $                               @                                                             ",
+        "                           ...                                                                                            ",
+        "                                         $                                                                                ",
+        "                 $                      ...                                          $$$                  @               ",
+        "                ...                        @                                  =============                               ",
+        "                                =                               >                            @                            ",
+        "                                =                    @                   $                            >               /   ",
+        "                          /     =             >                    @  ========                                       ///  ",
+        "======================================================================        ============================================",
     ],
 ]
 scene("game", ({ levelIdx, score }) => {
@@ -135,10 +206,13 @@ scene("game", ({ levelIdx, score }) => {
         },
     })
 
+    //camScale(2)
+
     // Recherche de méchant ou flammesBarre dans la map
     for (let j = 0; j <= 15; j++) {
         posMechant = (LEVELS[levelIdx][j].search(regex1))
-        posFlammesBar = (LEVELS[levelIdx][j].search(regex2))
+        posFlammesBar1 = (LEVELS[levelIdx][j].search(regex2))
+        posFlammesBar2 = (LEVELS[levelIdx][j].search(regex3))
         //console.log(posMechant)
         if (posMechant !== -1) {
             arrayPositionEnemies.push(
@@ -148,12 +222,22 @@ scene("game", ({ levelIdx, score }) => {
                 }
             )
         }
-        if (posFlammesBar !== -1) {
+        if (posFlammesBar1 !== -1) {
             arrayPositionFlammesBar.push(
                 {
-                    "x": (120 + (posFlammesBar * 16)),
-                    "y":(320 + j),
+                    "x": (110 + (posFlammesBar1 * 16)),
+                    "y":(130 + (j * 16)),
                     "deg": 60,
+                    "num": 6,
+                }
+            )
+        }
+        if (posFlammesBar2 !== -1) {
+            arrayPositionFlammesBar.push(
+                {
+                    "x": (110 + (posFlammesBar2 * 16)),
+                    "y":(130 + (j * 16)),
+                    "deg": -60,
                     "num": 6,
                 }
             )
@@ -168,10 +252,13 @@ scene("game", ({ levelIdx, score }) => {
     /*                             Joueur                                      */
     /* ####################################################################### */
     // Ajouter un joueur
-    player = add([
+    let player = add([
         sprite("mario"),
+        //sprite("hero", { anim: "idle" }),
         area(),
         body(),
+        //scale(1.5),
+        scale(1),
         pos(140,300),
     ])
 
@@ -185,7 +272,7 @@ scene("game", ({ levelIdx, score }) => {
         camPos(player.worldPos())
     })
 
-    // Movements
+    // Movements + direction de tire
     onKeyPress("space", () => {
         if (player.isGrounded()) {
             player.jump(JUMP_FORCE)
@@ -198,6 +285,14 @@ scene("game", ({ levelIdx, score }) => {
     onKeyDown("right", () => {
         player.move(SPEED, 0)
         positionFire = 1;
+    })
+
+    // direction de tire
+    onKeyDown("up", () => {
+        positionFire = -90;
+    })
+    onKeyDown("down", () => {
+        positionFire = 90;
     })
 
     // Fall death
@@ -254,8 +349,9 @@ scene("game", ({ levelIdx, score }) => {
             "feu",
         ])
     }
+
     onKeyPress("z", async () => {
-        spawnBullet()
+        spawnBullet();
     })
 
     // Si une bullet touche un bloc
@@ -341,12 +437,12 @@ scene("game", ({ levelIdx, score }) => {
                     ])
                 }
             }
-            await wait(1)
+            await wait(.5)
             enemy.enterState("move")
         })
 
         enemy.onStateEnter("move", async () => {
-            await wait(1)
+            await wait(.7)
             enemy.enterState("idle")
         })
 
@@ -409,14 +505,15 @@ const BOSS = [
 scene("battle", ({levelIdBoss, score})=> {
     // Use the level passed, or first level
     const level = addLevel(BOSS[levelIdBoss || 0], {
-        tileWidth: 32,
-        tileHeight: 32,
+        // 40
+        tileWidth: 24,
+        tileHeight: 24,
         pos: vec2(100, 100),
         tiles: {
             "=": () => [
                 sprite("sol"),
                 area(),
-                scale(4),
+                scale(3),
                 body({ isStatic: true }),
                 tile({ isObstacle: true }),
                 "sol",
@@ -424,7 +521,7 @@ scene("battle", ({levelIdBoss, score})=> {
             ".": () => [
                 sprite("vide"),
                 area(),
-                scale(4),
+                scale(3),
                 body({ isStatic: true }),
                 tile({ isObstacle: true }),
                 "vide",
@@ -483,10 +580,17 @@ scene("battle", ({levelIdBoss, score})=> {
     const player = add([
         sprite("mario"),
         area(),
+        health(PLAYER_HEALTH),
         body(),
         scale(2),
         pos(140,300),
+        "player",
     ])
+
+    onCollide("feu", "enemy", (b, e) => {
+        destroy(b)
+        e.hurt(1)
+    })
     // déplacement
     onKeyDown("left", () => {
         player.move(-SPEED, 0)
@@ -511,11 +615,24 @@ scene("battle", ({levelIdBoss, score})=> {
             outline(4),
             move(UP, BULLET_SPEED),
             offscreen({ destroy: true }),
-            "bullet",
+            "feu",
         ])
     }
     onKeyPress("z", () => {
         spawnBullet(player.pos.sub(-20, 10))
+    })
+
+    // contact bullet
+    player.onCollide("bullet", (bullet) => {
+        destroy(bullet)
+        player.hurt(1)
+    })
+    player.onHurt(() => {
+        healthbar.set(player.hp())
+    })
+    // boss mort
+    player.onDeath(() => {
+        go("lose", { score: (score) })
     })
 
     /* ########                BOSS                ###### */
@@ -527,6 +644,7 @@ scene("battle", ({levelIdBoss, score})=> {
         health(BOSS_HEALTH),
         scale(5),
         anchor("top"),
+        state("attack"),
         "enemy",
         {
             dir: 1,
@@ -535,15 +653,16 @@ scene("battle", ({levelIdBoss, score})=> {
     // déplacement
     boss.onUpdate( () => {
         boss.move(BOSS_SPEED * boss.dir, 0)
-        if (boss.dir === 1 && boss.pos.x >= width() - 250) {
+        if (boss.dir === 1 && boss.pos.x >= 960) {
             boss.dir = -1
         }
-        if (boss.dir === -1 && boss.pos.x <= 200) {
+        if (boss.dir === -1 && boss.pos.x <= 170) {
             boss.dir = 1
         }
     })
+
     // boss toucher
-    onCollide("bullet", "enemy", (b, e) => {
+    onCollide("feu", "enemy", (b, e) => {
         destroy(b)
         e.hurt(1)
     })
@@ -567,23 +686,60 @@ scene("battle", ({levelIdBoss, score})=> {
             },
         },
     ])
+
+    boss.onStateEnter("attack", async () => {
+            // Don't do anything if player doesn't exist anymore
+            if (player.exists()) {
+                while(player.exists()) {
+                    let dir = player.pos.sub(boss.pos)
+                    add([
+                        pos(boss.pos.sub(-10, -10)),
+                        move(dir, BULLET_SPEED),
+                        rect(15, 15),
+                        area(),
+                        offscreen({ destroy: true }),
+                        anchor("center"),
+                        color(RED),
+                        "bullet",
+                    ])
+                    await wait(.5)
+                }
+            }
+    })
     /* ########################################################################### */
     /* ########################################################################### */
 })
-
-
-/* ########################################################################### */
-/*                            START / LOSE / WIN                               */
-/* ########################################################################### */
-scene("lose", ({ score }) => {
-
+/* ####################################################################### */
+/*                        START / LOSE / WIN / MENU                        */
+/* ####################################################################### */
+scene("menu", ()=> {
     add([
         sprite("mario"),
         pos(width() / 2, height() / 2 - 108),
         scale(3),
         anchor("center"),
     ])
+    addButton("Start", (width() / 2), (height() / 2) , () => {
+        go("game", {
+            levelIdx: 0,
+            score: 0,
+        })
+    })
+    onKeyPress("space", () => go("game", {
+        levelIdx: 0,
+        score: 0,
+    }))
+})
 
+scene("lose", ({ score }) => {
+
+    // display player
+    add([
+        sprite("mario"),
+        pos(width() / 2, height() / 2 - 108),
+        scale(3),
+        anchor("center"),
+    ])
     // display score
     add([
         text(score),
@@ -591,28 +747,36 @@ scene("lose", ({ score }) => {
         scale(3),
         anchor("center"),
     ])
-
-    // go back to game with space is pressed
-    onKeyPress("space", () => go("game", {
+    // return to menu
+    onKeyPress("space", () => go("menu", {
         levelIdx: 0,
         score: 0,
     }))
-    onClick(() => go("game", {
+    onClick(() => go("menu", {
         levelIdx: 0,
         score: 0,
     }))
-
 })
 scene("win", ({ score }) => {
 
+    // display player
     add([
-        text(`GG ! You Win and you have ${score} coins  !!!`, {
-            width: width(),
-        }),
-        pos(12),
+        sprite("mario"),
+        pos(width() / 2, height() / 2 - 108),
+        scale(3),
+        anchor("center"),
     ])
-    onKeyPress(start)
+    // display score
+    add([
+        text(`GG ! You Win and you have ${score} coins  !!!`),
+        pos(width() / 2, height() / 2 + 108),
+        scale(1),
+        anchor("center"),
+    ])
 
+    // return to menu
+    onKeyPress("space", () => go("menu",))
+    onClick(() => go("menu"))
 })
 
 function start() {
@@ -623,13 +787,15 @@ function start() {
         score: 0,
     })
 
-     */
+
     go("game", {
         levelIdx: 0,
         score: 0,
     })
+    */
+    go("menu")
 }
 start()
-/* ################################################################################################################## */
-/* ################################################################################################################## */
-/* ################################################################################################################## */
+/* ##################################################################################################################################### */
+/* ##################################################################################################################################### */
+/* ##################################################################################################################################### */
